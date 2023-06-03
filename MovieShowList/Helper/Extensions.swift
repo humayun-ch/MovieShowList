@@ -60,6 +60,15 @@ extension UIView {
         self.layer.borderWidth = borderWidth
         self.layer.borderColor = borderColor.cgColor
     }
+    
+    func fillSuperView(){
+        guard let superView = self.superview else {return}
+        translatesAutoresizingMaskIntoConstraints = false
+        self.topAnchor.constraint(equalTo: superView.topAnchor).isActive = true
+        self.bottomAnchor.constraint(equalTo: superView.bottomAnchor).isActive = true
+        self.leftAnchor.constraint(equalTo: superView.leftAnchor).isActive = true
+        self.rightAnchor.constraint(equalTo: superView.rightAnchor).isActive = true
+    }
 }
 
 //MARK: - ************ UIColor related ************
@@ -131,3 +140,75 @@ extension UIViewController{
         })
     }
 }
+
+extension UIViewController {
+    func showActivityIndicator() {
+        DispatchQueue.main.async {[self] in
+            let activityIndicator = UIActivityIndicatorView(frame: CGRect(x: 0, y: 0, width: 100, height: 100))
+            activityIndicator.backgroundColor = UIColor(red:0.16, green:0.17, blue:0.21, alpha:1)
+            activityIndicator.layer.cornerRadius = 6
+            activityIndicator.center = view.center
+            activityIndicator.hidesWhenStopped = true
+            activityIndicator.style = .large
+            activityIndicator.startAnimating()
+            activityIndicator.tag = 100
+            for subview in view.subviews {
+                if subview.tag == 100 {
+                    return
+                }
+            }
+            view.addSubview(activityIndicator)
+        }
+    }
+    
+    func hideActivityIndicator() {
+        DispatchQueue.main.async {[self] in
+            let activityIndicator = view.viewWithTag(100) as? UIActivityIndicatorView
+            activityIndicator?.stopAnimating()
+            activityIndicator?.removeFromSuperview()
+        }
+    }
+}
+
+/* to chache url assets*/
+
+let imageCache = NSCache<NSString, UIImage>()
+
+extension UIImageView {
+    func loadImageUsingCache(withUrl urlString : String, showPlaceHolder: Bool) {
+        let url = URL(string: urlString)
+        if url == nil {return}
+        if showPlaceHolder{
+            self.image = UIImage(named: "placeholder")!
+        }
+        
+        // check cached image
+        if let cachedImage = imageCache.object(forKey: urlString as NSString)  {
+            self.image = cachedImage
+            return
+        }
+        
+        let activityIndicator: UIActivityIndicatorView = UIActivityIndicatorView.init(style: .medium)
+        addSubview(activityIndicator)
+        activityIndicator.startAnimating()
+        activityIndicator.anchor(centerX: self.centerXAnchor , centerY: self.centerYAnchor ,width: 20, height: 20)
+        
+        URLSession.shared.dataTask(with: url!, completionHandler: { (data, response, error) in
+            if error != nil {
+                print(error!)
+                return
+            }
+            
+            DispatchQueue.main.async {
+                if let image = UIImage(data: data!) {
+                    imageCache.setObject(image, forKey: urlString as NSString)
+                    self.image = image
+                    activityIndicator.stopAnimating()
+                    activityIndicator.removeFromSuperview()
+                }
+            }
+            
+        }).resume()
+    }
+}
+
