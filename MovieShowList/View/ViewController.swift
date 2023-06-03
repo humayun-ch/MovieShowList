@@ -51,8 +51,6 @@ class ViewController: UIViewController {
         showActivityIndicator()
         movieDetailsVM.getMovieList(page: currentPage, query: searchKeyWord) {[weak self] list, error in
             guard let self = self, let list = list else {
-//                self?.hideActivityIndicator()
-//                Utility.showAlert(self!, "Error", error ?? "")
                 return
             }
             self.hideActivityIndicator()
@@ -67,6 +65,23 @@ extension ViewController: UISearchBarDelegate{
         currentPage = 1
         searchKeyWord = searchBar.text ?? ""
         getMovieList()
+    }
+    
+
+    func searchBarTextDidBeginEditing(_ searchBar: UISearchBar) {
+        searchBar.showsCancelButton = true
+    }
+
+    func searchBarCancelButtonClicked(_ searchBar: UISearchBar) {
+        print("canceled searbar")
+        
+        currentPage = 1
+        searchKeyWord = "Marvel"
+        getMovieList()
+
+        searchBar.searchTextField.text = nil
+        searchBar.showsCancelButton = false
+        searchBar.resignFirstResponder()
     }
 }
 
@@ -128,7 +143,6 @@ extension ViewController: UITableViewDelegate, UITableViewDataSource{
             showActivityIndicator()
             movieDetailsVM.getMovieList(page: currentPage, query: "marvel") { [weak self] movieList, error in
                 guard let self = self, let movieList = movieList else {
-//                    self?.hideActivityIndicator()
                     return
                 }
                 self.movieList?.page = movieList.page
